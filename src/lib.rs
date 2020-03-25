@@ -23,16 +23,24 @@ impl Config {
 }
 
 pub fn run(config: Config) -> Vec<String> {
+    println!("Starting lexical analyzer");
     let (errors, tokens) = lexic_analize(&config.input[..]);
     for e in &errors {
         println!("{}", e)
     }
-    for t in &tokens {
-        println!("Received a {:#?} token", t)
+    if errors.len() == 0 {
+        println!("The lexical analizer did not report any errors");
     }
+//    for t in &tokens {
+//        println!("Received a {:#?} token", t)
+//    }
+    println!("Starting syntatic analyzer");
     let errors = syntatic_analize(&tokens);
     for e in &errors {
         println!("{}", e)
+    }
+    if errors.len() == 0 {
+        println!("The syntatic analizer did not report any errors");
     }
     return errors;
 }
