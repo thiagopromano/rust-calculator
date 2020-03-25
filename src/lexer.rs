@@ -19,12 +19,17 @@ pub fn lexic_analize(input: &str) -> (Vec<String>, Vec<Token>) {
             ' ' | '\r' | '\n' => (), //ignore whitespace
             '*' => tokens.push(OperationMultiplication(pos)),
             '/' => tokens.push(OperationDivision(pos)),
+            '%' => tokens.push(OperationDivision(pos)),
             '+' => tokens.push(OperationSum(pos)),
             '-' => tokens.push(OperationSubtraction(pos)),
             '(' => tokens.push(OpenParethesis(pos)),
             ')' => tokens.push(CloseParethesis(pos)),
             _ => errors.push(format!("Could not parse token \"{}\" at position {}", c, pos + 1)),
         }
+    }
+    if digit_array.len() > 0 {
+        tokens.push(Digit(0, digit_array.parse().unwrap()));
+        digit_array.clear()
     }
     return (errors, tokens);
 }

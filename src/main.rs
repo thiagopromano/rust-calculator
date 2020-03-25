@@ -9,9 +9,5 @@ fn main() {
         process::exit(1);
     });
 
-    if let Err(e) = run(config) {
-        println!("Application error: {}", e);
-
-        process::exit(1);
-    }
+     run(config);
 }
