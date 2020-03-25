@@ -1,7 +1,10 @@
 use std::error::Error;
-use crate::lexer::{lexic_analize};
+use crate::lexer::*;
+use crate::sintatical::*;
 
 mod lexer;
+mod sintatical;
+mod token;
 
 pub struct Config {
     pub input: String,
@@ -22,11 +25,15 @@ impl Config {
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let (errors, tokens) = lexic_analize(&config.input[..]);
-    for e in errors {
+    for e in &errors {
         println!("{}", e)
     }
-    for t in tokens {
+    for t in &tokens {
         println!("Received a {:#?} token", t)
+    }
+    let errors = syntatic_analize(&tokens);
+    for e in &errors {
+        println!("{}", e)
     }
     Ok(())
 }

@@ -1,10 +1,4 @@
-use crate::lexer::Token::Digit;
-
-#[derive(PartialEq)]
-#[derive(Debug)]
-pub enum Token {
-    Digit(i32),
-}
+use crate::token::Token::{self, *};
 
 pub fn lexic_analize(input: &str) -> (Vec<String>, Vec<Token>) {
     let mut errors = Vec::new();
@@ -17,26 +11,27 @@ pub fn lexic_analize(input: &str) -> (Vec<String>, Vec<Token>) {
         }
         //ended sequence of numbers
         if digit_array.len() > 0 {
-            tokens.push(Digit(digit_array.parse().unwrap()));
+            tokens.push(Digit(pos - digit_array.len(), digit_array.parse().unwrap()));
             digit_array.clear()
-        }
-
-        if let Token::Invalid() = token {
-            continue;
         }
 
         match c {
             ' ' | '\r' | '\n' => (), //ignore whitespace
+            '*' => tokens.push(OperationMultiplication(pos)),
+            '/' => tokens.push(OperationDivision(pos)),
+            '+' => tokens.push(OperationSum(pos)),
+            '-' => tokens.push(OperationSubtraction(pos)),
+            '(' => tokens.push(OpenParethesis(pos)),
+            ')' => tokens.push(CloseParethesis(pos)),
             _ => errors.push(format!("Could not parse token \"{}\" at position {}", c, pos + 1)),
         }
-
     }
     return (errors, tokens);
 }
 
 #[cfg(test)]
 mod test_lexic {
-    use crate::lexer::lexic_analize;
+    use super::*;
 
     #[test]
     fn empty_string_gives_nothing() {
@@ -44,7 +39,21 @@ mod test_lexic {
     }
 
     #[test]
-    fn empty_string_gives_nothing() {
-        assert_eq!((vec!(), vec!()), lexic_analize("55 + 4 / 3 aaf + 2"));
+    fn expression_with_errors_should_give_errors() {
+        assert_eq!((vec!(
+            "Could not parse token \"a\" at position 7".to_string(),
+            "Could not parse token \"a\" at position 9".to_string(),
+            "Could not parse token \"f\" at position 10".to_string(),
+        ), vec!(
+            (Digit(0, 55)),
+            (OperationSum(2)),
+            (Digit(3, 4)),
+            (OperationDivision(4)),
+            (Digit(5, 3)),
+            (OperationMultiplication(7)),
+            (OperationSubtraction(10)),
+            (OpenParethesis(11)),
+            (CloseParethesis(12)),
+        )), lexic_analize("55+4/3a*af-()"));
     }
 }
