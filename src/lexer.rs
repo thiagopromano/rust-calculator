@@ -1,7 +1,7 @@
 use crate::token::Token::{self, *};
+use crate::token::OperationType::{Multiplication, Division, Sum, Subtraction, GreaterThan, LowerThan};
 
-pub fn lexic_analize(input: &str) -> (Vec<String>, Vec<Token>) {
-    let mut errors = Vec::new();
+pub fn lexic_analize(input: &str) -> Vec<Token> {
     let mut tokens = Vec::new();
     let mut digit_array = String::new();
     for (pos, c) in input.chars().enumerate() {
@@ -17,21 +17,23 @@ pub fn lexic_analize(input: &str) -> (Vec<String>, Vec<Token>) {
 
         match c {
             ' ' | '\r' | '\n' => (), //ignore whitespace
-            '*' => tokens.push(OperationMultiplication(pos)),
-            '/' => tokens.push(OperationDivision(pos)),
-            '%' => tokens.push(OperationDivision(pos)),
-            '+' => tokens.push(OperationSum(pos)),
-            '-' => tokens.push(OperationSubtraction(pos)),
+            '*' => tokens.push(Operation(pos, Multiplication)),
+            '/' => tokens.push(Operation(pos, Division)),
+            '%' => tokens.push(Operation(pos, Division)),
+            '+' => tokens.push(Operation(pos, Sum)),
+            '-' => tokens.push(Operation(pos, Subtraction)),
+            '>' => tokens.push(Operation(pos, GreaterThan)),
+            '<' => tokens.push(Operation(pos, LowerThan)),
             '(' => tokens.push(OpenParethesis(pos)),
             ')' => tokens.push(CloseParethesis(pos)),
-            _ => errors.push(format!("Could not parse token \"{}\" at position {}", c, pos + 1)),
+            _ => tokens.push(Error(pos, c)),
         }
     }
     if digit_array.len() > 0 {
         tokens.push(Digit(0, digit_array.parse().unwrap()));
         digit_array.clear()
     }
-    return (errors, tokens);
+    return tokens;
 }
 
 #[cfg(test)]
@@ -40,25 +42,23 @@ mod test_lexic {
 
     #[test]
     fn empty_string_gives_nothing() {
-        assert_eq!((vec!(), vec!()), lexic_analize(""));
+        assert_eq!(Vec::<Token>::new(), lexic_analize(""));
     }
 
     #[test]
     fn expression_with_errors_should_give_errors() {
-        assert_eq!((vec!(
-            "Could not parse token \"a\" at position 7".to_string(),
-            "Could not parse token \"a\" at position 9".to_string(),
-            "Could not parse token \"f\" at position 10".to_string(),
-        ), vec!(
-            (Digit(0, 55)),
-            (OperationSum(2)),
-            (Digit(3, 4)),
-            (OperationDivision(4)),
-            (Digit(5, 3)),
-            (OperationMultiplication(7)),
-            (OperationSubtraction(10)),
-            (OpenParethesis(11)),
-            (CloseParethesis(12)),
-        )), lexic_analize("55+4/3a*af-()"));
+        assert_eq!(vec!(
+            Digit(0, 55),
+            Operation(2, Sum),
+            Digit(3, 4),
+            Operation(4, Division),
+            Digit(5, 3),
+            Error(6, 'a'),
+            Operation(7, Multiplication),
+            Error(8, 'a'), Error(9, 'f'),
+            Operation(10, Subtraction),
+            OpenParethesis(11),
+            CloseParethesis(12),
+        ), lexic_analize("55+4/3a*af-()"));
     }
 }
