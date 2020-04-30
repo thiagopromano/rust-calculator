@@ -1,37 +1,90 @@
 use crate::token::Token::{self, *};
-use crate::token::OperationType::{Multiplication, Division, Sum, Subtraction, GreaterThan, LowerThan};
+use crate::token::OperationType::{*};
+use crate::token::Keyword::{*};
+use regex::Regex;
+use std::panic;
 
 pub fn lexic_analize(input: &str) -> Vec<Token> {
     let mut tokens = Vec::new();
     let mut digit_array = String::new();
-    for (pos, c) in input.chars().enumerate() {
-        if c >= '0' && c <= '9' {
-            digit_array.push(c);
+
+    let mut curr_pos = 0;
+    let end_pos = input.len();
+    let re = Regex::new(r"^(?:(?P<number>\d{1,3})|(?P<if>if)|(?P<for>for)|(?P<in>in)|(?P<out>out)|(?P<lt><)|(?P<gt>>)|(?P<not>!)|(?P<eq>=)|(?P<id>\w(?:\d|\w)*))").unwrap();
+    loop {
+        if curr_pos == end_pos {
+            break;
+        }
+        let curr_str = &input[curr_pos..];
+        let captures = match re.captures(curr_str) {
+            Some(Captures) => Captures,
+            None => {
+                curr_pos += 1;
+                continue;
+            }
+        };
+        if captures.name("number") != None {
+            let capture = captures.name("number").unwrap();
+            tokens.push(Token::Number(curr_pos, capture.as_str().parse().unwrap()));
+            curr_pos += capture.end();
             continue;
         }
-        //ended sequence of numbers
-        if digit_array.len() > 0 {
-            tokens.push(Digit(pos - digit_array.len(), digit_array.parse().unwrap()));
-            digit_array.clear()
+        if captures.name("if") != None {
+            let capture = captures.name("if").unwrap();
+            tokens.push(Token::Keyword(curr_pos, If));
+            curr_pos += capture.end();
+            continue;
         }
-
-        match c {
-            ' ' | '\r' | '\n' => (), //ignore whitespace
-            '*' => tokens.push(Operation(pos, Multiplication)),
-            '/' => tokens.push(Operation(pos, Division)),
-            '%' => tokens.push(Operation(pos, Division)),
-            '+' => tokens.push(Operation(pos, Sum)),
-            '-' => tokens.push(Operation(pos, Subtraction)),
-            '>' => tokens.push(Operation(pos, GreaterThan)),
-            '<' => tokens.push(Operation(pos, LowerThan)),
-            '(' => tokens.push(OpenParethesis(pos)),
-            ')' => tokens.push(CloseParethesis(pos)),
-            _ => tokens.push(Error(pos, c)),
+        if captures.name("for") != None {
+            let capture = captures.name("for").unwrap();
+            tokens.push(Token::Keyword(curr_pos, For));
+            curr_pos += capture.end();
+            continue;
         }
-    }
-    if digit_array.len() > 0 {
-        tokens.push(Digit(0, digit_array.parse().unwrap()));
-        digit_array.clear()
+        if captures.name("in") != None {
+            let capture = captures.name("in").unwrap();
+            tokens.push(Token::Keyword(curr_pos, In));
+            curr_pos += capture.end();
+            continue;
+        }
+        if captures.name("out") != None {
+            let capture = captures.name("out").unwrap();
+            tokens.push(Token::Keyword(curr_pos, In));
+            curr_pos += capture.end();
+            continue;
+        }
+        if captures.name("lt") != None {
+            let capture = captures.name("lt").unwrap();
+            tokens.push(Token::Operation(curr_pos, LessThan));
+            curr_pos += capture.end();
+            continue;
+        }
+        if captures.name("gt") != None {
+            let capture = captures.name("gt").unwrap();
+            tokens.push(Token::Operation(curr_pos, GreaterThan));
+            curr_pos += capture.end();
+            continue;
+        }
+        if captures.name("not") != None {
+            let capture = captures.name("not").unwrap();
+            tokens.push(Token::Operation(curr_pos, Not));
+            curr_pos += capture.end();
+            continue;
+        }
+        if captures.name("eq") != None {
+            let capture = captures.name("eq").unwrap();
+            tokens.push(Token::Operation(curr_pos, Equal));
+            curr_pos += capture.end();
+            continue;
+        }
+        if captures.name("id") != None {
+            let capture = captures.name("id").unwrap();
+            tokens.push(Token::ID(curr_pos, capture.as_str().to_string()));
+            curr_pos += capture.end();
+            continue;
+        }
+        print!("captures {:?}", captures);
+        panic!("unreachable code")
     }
     return tokens;
 }
@@ -48,17 +101,7 @@ mod test_lexic {
     #[test]
     fn expression_with_errors_should_give_errors() {
         assert_eq!(vec!(
-            Digit(0, 55),
-            Operation(2, Sum),
-            Digit(3, 4),
-            Operation(4, Division),
-            Digit(5, 3),
-            Error(6, 'a'),
-            Operation(7, Multiplication),
-            Error(8, 'a'), Error(9, 'f'),
-            Operation(10, Subtraction),
-            OpenParethesis(11),
-            CloseParethesis(12),
-        ), lexic_analize("55+4/3a*af-()"));
+            Operation(0, LessThan), Keyword(2, If), Keyword(5, For), ID(9, "a".to_string()), Operation(11, Equal), Number(13, 31), Number(18, 252), ID(22, "p3ssego0".to_string()), Operation(30, Not), Operation(31, Equal), Keyword(33, In), Keyword(36, In), ID(40, "amora".to_string()), Operation(45, GreaterThan)
+        ), lexic_analize("< if for a = 31 + 252 p3ssego0!= in out amora>"));
     }
 }

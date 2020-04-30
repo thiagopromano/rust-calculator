@@ -1,12 +1,14 @@
 #[derive(PartialEq)]
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 #[derive(Debug)]
 pub enum Token {
-    Digit(usize, i32),
+    Number(usize, i32),
     Operation(usize, OperationType),
     OpenParethesis(usize),
     CloseParethesis(usize),
-    Error(usize, char)
+    Keyword(usize, Keyword),
+    Error(usize, char),
+    ID(usize, String),
 }
 
 #[derive(PartialEq)]
@@ -18,5 +20,16 @@ pub enum OperationType {
     Subtraction,
     Division,
     GreaterThan,
-    LowerThan,
+    Not,
+    Equal,
+    LessThan,
+}
+#[derive(PartialEq)]
+#[derive(Copy, Clone)]
+#[derive(Debug)]
+pub enum Keyword {
+    If,
+    For,
+    In,
+    Out,
 }
