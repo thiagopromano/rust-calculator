@@ -1,9 +1,9 @@
 use crate::lexer::*;
 use crate::sintatical::*;
 
-mod lexer;
+pub mod lexer;
 mod sintatical;
-mod token;
+pub mod token;
 
 pub struct Config {
     pub input: String,

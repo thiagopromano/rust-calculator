@@ -6,11 +6,10 @@ use std::panic;
 
 pub fn lexic_analize(input: &str) -> Vec<Token> {
     let mut tokens = Vec::new();
-    let mut digit_array = String::new();
 
     let mut curr_pos = 0;
     let end_pos = input.len();
-    let re = Regex::new(r"^(?:(?P<number>\d{1,3})|(?P<if>if)|(?P<for>for)|(?P<in>in)|(?P<out>out)|(?P<lt><)|(?P<gt>>)|(?P<not>!)|(?P<eq>=)|(?P<id>\w(?:\d|\w)*))").unwrap();
+    let re = Regex::new(r"^(?:(?P<number>\d{1,3}\b)|(?P<if>if\b)|(?P<for>for\b)|(?P<in>in\b)|(?P<out>out\b)|(?P<lt><)|(?P<gt>>)|(?P<not>!)|(?P<eq>=)|(?P<id>[a-zA-Z](?:\w)*))|(?P<error>.)").unwrap();
     loop {
         if curr_pos == end_pos {
             break;
@@ -49,7 +48,7 @@ pub fn lexic_analize(input: &str) -> Vec<Token> {
         }
         if captures.name("out") != None {
             let capture = captures.name("out").unwrap();
-            tokens.push(Token::Keyword(curr_pos, In));
+            tokens.push(Token::Keyword(curr_pos, Out));
             curr_pos += capture.end();
             continue;
         }
@@ -83,6 +82,12 @@ pub fn lexic_analize(input: &str) -> Vec<Token> {
             curr_pos += capture.end();
             continue;
         }
+        if captures.name("error") != None {
+            let capture = captures.name("error").unwrap();
+            tokens.push(Token::Error(curr_pos, capture.as_str().chars().next().unwrap()));
+            curr_pos += capture.end();
+            continue;
+        }
         print!("captures {:?}", captures);
         panic!("unreachable code")
     }
@@ -99,9 +104,15 @@ mod test_lexic {
     }
 
     #[test]
-    fn expression_with_errors_should_give_errors() {
+    fn common_expression() {
         assert_eq!(vec!(
             Operation(0, LessThan), Keyword(2, If), Keyword(5, For), ID(9, "a".to_string()), Operation(11, Equal), Number(13, 31), Number(18, 252), ID(22, "p3ssego0".to_string()), Operation(30, Not), Operation(31, Equal), Keyword(33, In), Keyword(36, In), ID(40, "amora".to_string()), Operation(45, GreaterThan)
         ), lexic_analize("< if for a = 31 + 252 p3ssego0!= in out amora>"));
+    }
+    #[test]
+    fn with_error() {
+        assert_eq!(vec!(
+            Operation(0, LessThan), Keyword(2, If), Keyword(5, For), ID(9, "a".to_string()), Operation(11, Equal), Number(13, 31), Number(18, 252), ID(22, "p3ssego0".to_string()), Operation(30, Not), Operation(31, Equal), Keyword(33, In), Keyword(36, In), ID(40, "amora".to_string()), Operation(45, GreaterThan)
+        ), lexic_analize("5 - 3 @ zxc;"));
     }
 }
